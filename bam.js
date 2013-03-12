@@ -184,66 +184,66 @@ function SamRecord(name,flag,pos,qual,cigar,sequence,qualities)
 	this.y=0;
 	}
 
-SamRecord.prototype.flagIsSet=function(flg)
+SamRecord.prototype.isFlagSet=function(flg)
 	{
 	return flg & this.flag;
 	}
 
 SamRecord.prototype.isPaired=function()
 	{
-	return this.hasFlag(0x1);
+	return this.isFlagSet(0x1);
 	}
 		
 SamRecord.prototype.isPropertPair=function()
 	{
-	return this.hasFlag(0x2);
+	return this.isFlagSet(0x2);
 	}
 	
 
 SamRecord.prototype.isUnmapped=function()
 	{
-	return this.hasFlag(0x4);
+	return this.isFlagSet(0x4);
 	}
 	
 
 SamRecord.prototype.isMateUnmapped=function()
 	{
-	return this.hasFlag(0x8);
+	return this.isFlagSet(0x8);
 	}
 
 SamRecord.prototype.isReverseStrand=function()
 	{
-	return this.hasFlag(0x10);
+	return this.isFlagSet(0x10);
 	}
 
 SamRecord.prototype.isMateReverseStrand=function()
 	{
-	return this.hasFlag(0x20);
+	return this.isFlagSet(0x20);
 	}
 
 SamRecord.prototype.isFirstInPair=function()
 	{
-	return this.hasFlag(0x40);
+	return this.isFlagSet(0x40);
 	}
 
 SamRecord.prototype.isSecondInPair=function()
 	{
-	return this.hasFlag(0x80);
+	return this.isFlagSet(0x80);
 	}
 
 SamRecord.prototype.isNotPrimaryAlignment=function()
 	{
-	return this.hasFlag(0x100);
+	return this.isFlagSet(0x100);
 	}
 
 SamRecord.prototype.isFailsVendor=function()
 	{
-	return this.hasFlag(0x200);
+	return this.isFlagSet(0x200);
 	}
 	
 SamRecord.prototype.isPCRDuplicate=function()
 	{
-	return this.hasFlag(0x400);
+	return this.isFlagSet(0x400);
 	}
 
 /* returns the length of the DNA sequence */
@@ -271,9 +271,26 @@ function CigarIterator(ref,samRec)
 	this.ref=ref;
 	this.samRec;
 	this.cigar=Cigar.parse(samRec.cigar);
-	this.cigarElementIndex=-1;
+	this.cigarElementIndex=0;
+	this.indexInCigarElement=-1;
 	}
 
+CigarIterator.prototype.next=function()
+	{
+	for(;;)
+		{
+		if(this.cigarElementIndex >= this.cigar.size()) return false;
+		var ce= this.cigar.get( this.cigarElementIndex );
+		if(this.indexInCigarElement >= ce.size())
+			{
+			this.cigarElementIndex++;
+			this.indexInCigarElement=0;
+			continue;
+			}
+		
+		return trie;
+		}
+	}
 
 /****************************************************************************************************************************/
 /****************************************************************************************************************************/
