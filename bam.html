@@ -1,32 +1,31 @@
-<html lang="en" dir="ltr" class="client-nojs">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xml:lang="en">
 <head>
-<meta charset="utf-8"/>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <title>BAM</title>
-</head>
-<script src="bamview.js"></script>
-<script src="data.js"></script>
-<script>
 
-
+<script src="bam.js"  type="text/javascript"></script>
+<script src="data.js"  type="text/javascript"></script>
+<script  type="text/javascript">
 
 
 
 function init()
 	{
-	BamView.draw("sam1",bam1);
-	BamView.draw("sam2",bam1);
-	
+	var view=new BamView();
+	view.draw("sam1",bam1);
+	view.draw("sam2",bam1);
 	}
 
-document.addEventListener("load", init(), false);
-
+window.addEventListener("load", init, false);
 
 </script>
+</head>
 <body>
 
-<div id="sam1"/>
-
-<div id=sam2"/>
+<div id="sam1"></div>
+<div id="sam2"></div>
 
 </body>
 </html>

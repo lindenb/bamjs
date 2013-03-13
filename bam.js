@@ -3,7 +3,7 @@ function CigarOperator(consumesReadBases,  consumesReferenceBases, c)
 	{
 	this.consumesReadBases=consumesReadBases;
 	this.consumesReferenceBases=consumesReferenceBases;
-	this.c=c;
+	this.letter=c;
 	}
 
 CigarOperator.prototype.isConsumesReferenceBases=function()
@@ -19,7 +19,7 @@ CigarOperator.prototype.isConsumesReadBases=function()
 
 CigarOperator.prototype.toString=function()
 	{
-	return this.c;
+	return this.letter;
 	}
 
 /** Match or mismatch */
@@ -70,10 +70,21 @@ function CigarElement(length,op)
 	this.length=length;
 	this.op=op;
 	}
+/** return the length part of this cigar element */
+CigarElement.prototype.size=function()
+	{
+	return this.length;
+	}
+
+/** shotcuts to get the character of the operator */
+CigarElement.prototype.letter=function()
+	{
+	return this.op.letter();
+	}
 
 CigarElement.prototype.toString=function()
 	{
-	return ""+this.length+this.op.toString();
+	return ""+this.size()+this.letter();
 	}
 
 /****************************************************************************************************************************/
@@ -255,28 +266,65 @@ SamRecord.prototype.size=function()
 /* returns the idx-th base of the DNA sequence */
 SamRecord.prototype.get=function(i)
 	{
+	if(i<0 || i>=this.size()) throw "index out of range 0<="+i+"<"+this.size();
 	return this.sequence[i];
 	}
 
-/* returns this as a FASTQ record */
-SamRecord.prototype.toFastQ=function()
+
+/* return a Cigar object for this SamRecord */
+SamRecord.prototype.getCigar=function()
 	{
-	return "@"+this.name+"\n"+this.sequence+"\n+\n"+this.qualities;
-	}	
+	return Cigar.parse(this.cigar);
+	}
+
+/* @return 1-based inclusive leftmost position of the clippped sequence, or 0 if there is no position. */
+SamRecord.prototype.getAlignmentStart=function()
+	{
+	return this.pos;
+	}
+/** @return 1-based inclusive rightmost position of the clippped sequence, or 0 read if unmapped. */
+SamRecord.prototype.getAlignmentEnd=function()
+	{
+	var start=this.getAlignmentStart();
+        if(start==0)  return 0;
+       
+        var end = start + this.getCigar().getReferenceLength() - 1;
+     
+        return end;
+    	}
 /****************************************************************************************************************************/
 /****************************************************************************************************************************/
 /****************************************************************************************************************************/
 function CigarIterator(ref,samRec)
 	{
 	this.ref=ref;
-	this.samRec;
-	this.cigar=Cigar.parse(samRec.cigar);
+	this.samRec=samRec;
+	this.cigar=samRec.getCigar();
 	this.cigarElementIndex=0;
 	this.indexInCigarElement=-1;
+	this.readIndex = 0;
+	this.refIndex = samRec.getAlignmentStart();
 	}
+
+/**
+ * create a javascript object describing the alignment, called by 'next()'
+ */
+CigarIterator.prototype._align=function()
+	{
+	var ret=  {
+		"readIndex":this.readIndex,
+		"refIndex":this.refIndex,
+		"readBase":null,
+		"refBase":null,
+		"cigarElement":this.cigar.get( this.cigarElementIndex )
+		};
+	return ret;
+	}
+
 /**
  *
- * @returns null at end
+ * @returns
+ *    returns null at end
  */
 CigarIterator.prototype.next=function()
 	{
@@ -290,13 +338,41 @@ CigarIterator.prototype.next=function()
 		
 		if(this.indexInCigarElement < ce.size())
 			{
-			var ret={
-				"readPos":0,
-				"refPos":0,
-				"readChar":null,
-				"refChar":null
-				};
-			return ret;
+			switch(ce.op.letter)
+				{
+				case 'H' : this.indexInCigarElement++; break; // ignore hard clips
+				case 'P' : this.indexInCigarElement++; break; // ignore pads
+				case 'I' : //cont
+				case 'S' :
+					{
+					var ret=  this._align();
+					ret.readBase= this.samRec.get(this.readIndex);
+					this.readIndex++;
+					this.indexInCigarElement++;
+					return ret;
+					};
+				case 'N' : //cont
+				case 'D' :
+					{
+					var ret=  this._align();
+					this.refIndex++;
+					this.indexInCigarElement++;
+					return ret;
+					};
+				case 'X'://cont
+				case '='://cont
+				case 'M':
+					{
+					var ret=  this._align();
+					ret.readBase= this.samRec.get(this.readIndex);
+					this.readIndex++;
+					this.refIndex++;
+					this.indexInCigarElement++;
+					return ret;
+					}
+				default: throw "Not handled: "+ce.op;
+				}
+			
 			}
 		this.cigarElementIndex++;
 		this.indexInCigarElement=-1;
@@ -309,14 +385,84 @@ CigarIterator.prototype.next=function()
 
 
 function BamView() {}
-BamView.draw=function(id,aln)
+BamView.prototype.draw=function(id,aln)
 	{
+
 	var reads=aln.reads;
 	/* sort reads on position */
 	reads.sort(function(a,b){return a.pos-b.pos});
-	for(i in reads)
+	for(var i in reads)
 		{
 		reads[i].y=0;
-		Cigar.parse(reads[i].cigar);
+		reads[i].getCigar();
 		}
+	/* pileup */
+	var y=0;
+	var rows=new Array();
+	for(var i in reads)
+		{
+		var read=reads[i];
+		for(var y in rows)
+			{
+			var last=rows[y][ rows[y].length-1 ];
+			if(last.getAlignmentEnd()+1 < read.getAlignmentStart())
+				{
+				rows[y].push(read);
+				read.y=y;
+				read=null;
+				break;
+				}
+			}
+		if(read!=null)
+			{
+			read.y=rows.length;
+			var newrow=new Array();
+			newrow.push(read);
+			rows.push(newrow);
+			}
+		}
+	var div=document.getElementById(id);
+	if(div==null) throw "cannot get element @id=\""+id+"\"";
+	
+	//remove all children
+	while(div.firstChild!=null) div.removeChild(div.firstChild);
+	
+	var pre=document.createElement("pre");
+	pre.setAttribute("style","background-color:lightgray");
+	div.appendChild(pre);
+	
+	var content="";
+	for(var y=0;y< rows.length;++y)
+		{
+		
+		for(var x=0;x<100;++x)
+			{
+			var gpos=aln.ref.pos+x;
+			
+			var pixel=" ";
+			for(var j in rows[y])
+				{
+				
+				var read=rows[y][j];
+				var iter=new CigarIterator(aln.ref,read);
+				var align;
+				while((align=iter.next())!=null)
+					{
+					if(align.refIndex!=gpos) continue;
+					pixel=align.readBase;
+					if(gpos==read.getAlignmentStart())
+						{
+						pixel+="("+read.name+" "+read.getAlignmentStart()+"-"+read.getAlignmentEnd()+")";
+						}
+					break;
+					}
+				if(pixel!=" ") break;
+				}
+			if(pixel!=null) content+=pixel;
+			}
+		content+="\n";
+		}
+	
+	pre.appendChild(document.createTextNode(content));
+	
 	}
