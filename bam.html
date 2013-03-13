@@ -13,9 +13,16 @@
 
 function init()
 	{
+	/*
+	rec=new SamRecord("EAS1_108:2:62:879:264",163,216,99,"35M","AATGAAAACTATATTTATGCTATTCAGTTCTAAAT","<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<2<<");
+	console.log(""+rec.pos+" seq="+rec.sequence.length+" start:"+rec.getAlignmentStart()+" end:"+rec.getAlignmentEnd()+" 35M="+rec.getCigar().get(0).size());
+	
+	return;*/ 
 	var view=new BamView();
 	view.draw("sam1",bam1);
-	view.draw("sam2",bam1);
+	//view.draw("sam2",bam1);
+	
+	
 	}
 
 window.addEventListener("load", init, false);

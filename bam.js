@@ -79,7 +79,7 @@ CigarElement.prototype.size=function()
 /** shotcuts to get the character of the operator */
 CigarElement.prototype.letter=function()
 	{
-	return this.op.letter();
+	return this.op.letter;
 	}
 
 CigarElement.prototype.toString=function()
@@ -128,13 +128,14 @@ Cigar.prototype.getReadLength=function()
             var elt=this.get(i);
             if(elt.op.isConsumesReadBases())  length += elt.length;
             }
+        
         return length;
     	}
     	
 /** convert this cigar to String */
 Cigar.prototype.toString=function()
 	{
-	var s=0;
+	var s="";
 	for(var i=0;i< this.size();++i) s+=this.get(i).toString();
 	return s;
 	}
@@ -147,9 +148,9 @@ Cigar.parse=function(cigarStr)
 	while(i< cigarStr.length)
 		{
 		var length=0;
-		while(cigarStr.charCodeAt(i)>47 && cigarStr.charCodeAt(i)<58)
+		while(cigarStr.charCodeAt(i)>=48 && cigarStr.charCodeAt(i)<58)
 			{
-			length=length*10+(cigarStr.charCodeAt(i)-47);
+			length=length*10+(cigarStr.charCodeAt(i)-48);
 			++i;
 			}
 		if(length==0) throw "length=0 in cigarString: \""+cigarStr+"\"";
@@ -183,13 +184,13 @@ Reference.prototype.get=function(index)
 /****************************************************************************************************************************/
 /****************************************************************************************************************************/
 /****************************************************************************************************************************/
-function SamRecord(name,flag,pos,qual,cigar,sequence,qualities)
+function SamRecord(name,flag,pos,qual,cigarStr,sequence,qualities)
 	{
 	this.name=name;
 	this.flag=flag;
 	this.pos=pos;
 	this.qual=qual;
-	this.cigar=cigar;
+	this.cigar=Cigar.parse(cigarStr);;
 	this.sequence=sequence;
 	this.qualities=qualities;
 	this.y=0;
@@ -274,7 +275,7 @@ SamRecord.prototype.get=function(i)
 /* return a Cigar object for this SamRecord */
 SamRecord.prototype.getCigar=function()
 	{
-	return Cigar.parse(this.cigar);
+	return this.cigar;
 	}
 
 /* @return 1-based inclusive leftmost position of the clippped sequence, or 0 if there is no position. */
@@ -289,7 +290,7 @@ SamRecord.prototype.getAlignmentEnd=function()
         if(start==0)  return 0;
        
         var end = start + this.getCigar().getReferenceLength() - 1;
-     
+     	
         return end;
     	}
 /****************************************************************************************************************************/
@@ -340,15 +341,14 @@ CigarIterator.prototype.next=function()
 			{
 			switch(ce.op.letter)
 				{
-				case 'H' : this.indexInCigarElement++; break; // ignore hard clips
-				case 'P' : this.indexInCigarElement++; break; // ignore pads
+				case 'H' : break; // ignore hard clips
+				case 'P' : break; // ignore pads
 				case 'I' : //cont
 				case 'S' :
 					{
 					var ret=  this._align();
 					ret.readBase= this.samRec.get(this.readIndex);
 					this.readIndex++;
-					this.indexInCigarElement++;
 					return ret;
 					};
 				case 'N' : //cont
@@ -356,7 +356,6 @@ CigarIterator.prototype.next=function()
 					{
 					var ret=  this._align();
 					this.refIndex++;
-					this.indexInCigarElement++;
 					return ret;
 					};
 				case 'X'://cont
@@ -367,7 +366,6 @@ CigarIterator.prototype.next=function()
 					ret.readBase= this.samRec.get(this.readIndex);
 					this.readIndex++;
 					this.refIndex++;
-					this.indexInCigarElement++;
 					return ret;
 					}
 				default: throw "Not handled: "+ce.op;
@@ -444,16 +442,14 @@ BamView.prototype.draw=function(id,aln)
 				{
 				
 				var read=rows[y][j];
+
 				var iter=new CigarIterator(aln.ref,read);
 				var align;
 				while((align=iter.next())!=null)
 					{
 					if(align.refIndex!=gpos) continue;
 					pixel=align.readBase;
-					if(gpos==read.getAlignmentStart())
-						{
-						pixel+="("+read.name+" "+read.getAlignmentStart()+"-"+read.getAlignmentEnd()+")";
-						}
+					
 					break;
 					}
 				if(pixel!=" ") break;
