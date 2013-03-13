@@ -274,21 +274,32 @@ function CigarIterator(ref,samRec)
 	this.cigarElementIndex=0;
 	this.indexInCigarElement=-1;
 	}
-
+/**
+ *
+ * @returns null at end
+ */
 CigarIterator.prototype.next=function()
 	{
 	for(;;)
 		{
-		if(this.cigarElementIndex >= this.cigar.size()) return false;
-		var ce= this.cigar.get( this.cigarElementIndex );
-		if(this.indexInCigarElement >= ce.size())
-			{
-			this.cigarElementIndex++;
-			this.indexInCigarElement=0;
-			continue;
-			}
 		
-		return trie;
+		if(this.cigarElementIndex >= this.cigar.size()) return null;
+		var ce= this.cigar.get( this.cigarElementIndex );
+		
+		this.indexInCigarElement++;
+		
+		if(this.indexInCigarElement < ce.size())
+			{
+			var ret={
+				"readPos":0,
+				"refPos":0,
+				"readChar":null,
+				"refChar":null
+				};
+			return ret;
+			}
+		this.cigarElementIndex++;
+		this.indexInCigarElement=-1;
 		}
 	}
 
