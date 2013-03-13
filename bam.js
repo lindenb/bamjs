@@ -1,3 +1,17 @@
+/**
+
+Author: Pierre Lindenbaum PhD
+	@yokofakun 
+        http://plindenbaum.blogspot.com
+
+Date:   2013
+
+WWW:    https://github.com/lindenb/bamjs
+
+Javascript library for SAM/BAM. Inspired from the picard library for SAM.
+
+ **/
+
 /** The operators that can appear in a cigar string */
 function CigarOperator(consumesReadBases,  consumesReferenceBases, c)
 	{

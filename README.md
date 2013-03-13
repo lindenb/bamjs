@@ -1,5 +1,6 @@
-Author: Pierre Lindenbaum PhD
+Author: Pierre Lindenbaum PhD @yokofakun http://plindenbaum.blogspot.com
 
 Date  : 2013
 
-Motivation :  playing with BAM and javascript...
+
+Motivation :  Javascript library for displaying SAMRecords in a web browser.
