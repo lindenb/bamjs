@@ -36,6 +36,8 @@ CigarOperator.prototype.toString=function()
 	return this.letter;
 	}
 
+
+
 /** Match or mismatch */
 CigarOperator.M=new CigarOperator(true, true,   'M');
 /** Insertion vs. the reference. */
@@ -74,6 +76,7 @@ CigarOperator.getByName=function(op)
         	}
     	}
 
+
 /****************************************************************************************************************************/
 /****************************************************************************************************************************/
 /****************************************************************************************************************************/
@@ -99,6 +102,28 @@ CigarElement.prototype.letter=function()
 CigarElement.prototype.toString=function()
 	{
 	return ""+this.size()+this.letter();
+	}
+
+/** return true if operator is 'I' or 'S' */
+CigarElement.prototype.isInsertionInRead=function()
+	{
+	switch(this.letter())
+		{
+		case 'I' : //cont
+		case 'S' :
+			{
+			return true;
+			}
+		default: return false;
+		}
+	}
+/** return true two cigar elements have the same operator and size */
+CigarElement.prototype.sameAs(other)
+	{
+	if( other==null) return false;
+	return other.letter()==this.letter() &&
+		other.size()==this.size()
+		;
 	}
 
 /****************************************************************************************************************************/
@@ -353,7 +378,7 @@ CigarIterator.prototype.next=function()
 		
 		if(this.indexInCigarElement < ce.size())
 			{
-			switch(ce.op.letter)
+			switch(ce.letter())
 				{
 				case 'H' : break; // ignore hard clips
 				case 'P' : break; // ignore pads
@@ -391,88 +416,5 @@ CigarIterator.prototype.next=function()
 		}
 	}
 
-/****************************************************************************************************************************/
-/****************************************************************************************************************************/
-/****************************************************************************************************************************/
 
 
-function BamView() {}
-BamView.prototype.draw=function(id,aln)
-	{
-
-	var reads=aln.reads;
-	/* sort reads on position */
-	reads.sort(function(a,b){return a.pos-b.pos});
-	for(var i in reads)
-		{
-		reads[i].y=0;
-		reads[i].getCigar();
-		}
-	/* pileup */
-	var y=0;
-	var rows=new Array();
-	for(var i in reads)
-		{
-		var read=reads[i];
-		for(var y in rows)
-			{
-			var last=rows[y][ rows[y].length-1 ];
-			if(last.getAlignmentEnd()+1 < read.getAlignmentStart())
-				{
-				rows[y].push(read);
-				read.y=y;
-				read=null;
-				break;
-				}
-			}
-		if(read!=null)
-			{
-			read.y=rows.length;
-			var newrow=new Array();
-			newrow.push(read);
-			rows.push(newrow);
-			}
-		}
-	var div=document.getElementById(id);
-	if(div==null) throw "cannot get element @id=\""+id+"\"";
-	
-	//remove all children
-	while(div.firstChild!=null) div.removeChild(div.firstChild);
-	
-	var pre=document.createElement("pre");
-	pre.setAttribute("style","background-color:lightgray");
-	div.appendChild(pre);
-	
-	var content="";
-	for(var y=0;y< rows.length;++y)
-		{
-		
-		for(var x=0;x<100;++x)
-			{
-			var gpos=aln.ref.pos+x;
-			
-			var pixel=" ";
-			for(var j in rows[y])
-				{
-				
-				var read=rows[y][j];
-
-				var iter=new CigarIterator(aln.ref,read);
-				var align;
-				while((align=iter.next())!=null)
-					{
-					if(align.refIndex!=gpos) continue;
-					pixel=align.readBase;
-					
-					break;
-					}
-				if(pixel!=" ") break;
-				}
-			if(pixel!=null) content+=pixel;
-			}
-		content+="\n";
-		}
-	
-	pre.appendChild(document.createTextNode(content));
-	
-	}
