@@ -117,8 +117,40 @@ CigarElement.prototype.isInsertionInRead=function()
 		default: return false;
 		}
 	}
+
+/** return true if operator is 'N' or 'D' */
+CigarElement.prototype.isDeletionInRead=function()
+	{
+	switch(this.letter())
+		{
+		case 'N' : //cont
+		case 'D' :
+			{
+			return true;
+			}
+		default: return false;
+		}
+	}
+
+/** return true if operator is 'X','=' or 'M' */
+CigarElement.prototype.isAligned=function()
+	{
+	switch(this.letter())
+		{
+		case 'X' : //cont
+		case '=' : //cont
+		case 'M' :
+			{
+			return true;
+			}
+		default: return false;
+		}
+	}
+
+
+
 /** return true two cigar elements have the same operator and size */
-CigarElement.prototype.sameAs(other)
+CigarElement.prototype.sameAs=function(other)
 	{
 	if( other==null) return false;
 	return other.letter()==this.letter() &&
@@ -335,6 +367,54 @@ SamRecord.prototype.getAlignmentEnd=function()
 /****************************************************************************************************************************/
 /****************************************************************************************************************************/
 /****************************************************************************************************************************/
+function Pairwise()
+	{
+	this.readIndex=-1;
+	this.refIndex=-1;
+	this.readBase=null;
+	this.refBase=null;
+	this.cigarElement=null;
+	}
+
+/* returns true if is an InsertionInRead */
+Pairwise.prototype.isInsertionInRead=function()
+	{
+	return this.cigarElement.isInsertionInRead();
+	}
+
+/* returns true if is a Deletion In Read */
+Pairwise.prototype.isDeletionInRead=function()
+	{
+	return this.cigarElement.isDeletionInRead();
+	}
+	
+/* returns true if read under reference */
+Pairwise.prototype.isAligned=function()
+	{
+	return this.cigarElement.isAligned();
+	}
+
+Pairwise.prototype.toString=function()
+	{
+	if(this.isAligned())
+		{
+		return "read:"+this.readIndex+"/ref"+this.refIndex;
+		}
+	else if(this.isInsertionInRead())
+		{
+		return "insert:read:"+this.readIndex;
+		}
+	else if(this.isDeletionInRead())
+		{
+		return "deletion:ref:"+this.refIndex;
+		}
+	return "WTF!";
+	}
+
+/****************************************************************************************************************************/
+/****************************************************************************************************************************/
+/****************************************************************************************************************************/
+
 function CigarIterator(ref,samRec)
 	{
 	this.ref=ref;
@@ -351,13 +431,12 @@ function CigarIterator(ref,samRec)
  */
 CigarIterator.prototype._align=function()
 	{
-	var ret=  {
-		"readIndex":this.readIndex,
-		"refIndex":this.refIndex,
-		"readBase":null,
-		"refBase":null,
-		"cigarElement":this.cigar.get( this.cigarElementIndex )
-		};
+	var ret=  new Pairwise();
+	ret.readIndex=this.readIndex;
+	ret.refIndex=this.refIndex;
+	ret.readBase=null;
+	ret.refBase=null;
+	ret.cigarElement=this.cigar.get( this.cigarElementIndex );
 	return ret;
 	}
 

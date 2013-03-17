@@ -51,6 +51,16 @@ BamView.prototype.pileup=function()
 			this.rows.push(newrow);
 			}
 		}
+	
+	return;
+	this.rows=new Array();
+	for(var i in this.reads)
+		{
+		read.y=this.rows.length;
+		var newrow=new Array();
+		newrow.push(this.reads[i]);
+		this.rows.push(newrow);
+		}
 	}
 
 
@@ -94,7 +104,6 @@ BamView.prototype.draw=function(id,aln)
 						)
 						{
 						this.refpos2insertsize[posStr]=align.cigarElement.size();
-						console.log(" "+read.y+" "+read.sequence+" "+align.cigarElement.size());
 						}
 					break;
 					}
@@ -102,7 +111,6 @@ BamView.prototype.draw=function(id,aln)
 				}
 			}	
 		}
-	
 	
 	var content="";
 	/* write positions */
@@ -129,6 +137,8 @@ BamView.prototype.draw=function(id,aln)
 		}
 	content+="\n";
 	
+	/* create a pixel2refpos */
+	var pixel2refpos=[];
 	/* write reference sequence */
 	refPos=aln.reference.pos;
 	pixel_x=0;
@@ -141,12 +151,14 @@ BamView.prototype.draw=function(id,aln)
 			while(extra>0 && pixel_x< this.ncols)
 				{
 				content+="*";
+				pixel2refpos[pixel_x]=-1;
 				pixel_x++;
 				extra--;
 				}
 			if(pixel_x>= this.ncols) break;
 			}
 		content+=this.reference.get(refPos);
+		pixel2refpos[pixel_x]=refPos;
 		refPos++;
 		pixel_x++;
 		}
@@ -154,8 +166,82 @@ BamView.prototype.draw=function(id,aln)
 	
 	for(var y=0;y< this.rows.length;++y)
 		{
+		pixel_x=0;
+		refPos=aln.reference.pos;
+		var row=this.rows[y];
+
 		
-		for(var x=0;x<100;++x)
+		for(var read_index=0; read_index< row.length && pixel_x< this.ncols; ++read_index)
+			{
+			var samRecord=row[read_index];
+			
+			var iter=new CigarIterator(this.reference,samRecord);
+			var align;
+			
+			while(pixel_x< this.ncols && (align=iter.next())!=null)
+				{
+				
+				/* read-base is not visible, on the left of the screen */
+				if(!align.isDeletionInRead() && 
+				    align.refIndex < aln.reference.pos)
+					{	
+					continue;
+					}
+				
+				
+				
+				/* there was a gap with previous position/read, fill with blanks */
+				while(  pixel_x< this.ncols &&
+					!align.isDeletionInRead() &&
+					refPos < align.refIndex  )
+					{
+					/* no gap in ref for this column */
+					if(pixel2refpos[pixel_x]!=-1)
+						{
+						refPos++;
+						}
+					content+=".";
+						
+					pixel_x++;
+					}
+				
+				if(pixel_x>=this.cols) break;
+				if(align.isDeletionInRead())
+					{
+					refPos++;
+					content+="_";
+					pixel_x++;
+					}
+				else if(align.isInsertionInRead())
+					{
+					//content+="#";
+					pixel_x++;
+					}
+				else if(align.isAligned())
+					{
+					content+=samRecord.get(align.readIndex);
+					refPos++;
+					pixel_x++;
+					}
+				}
+			
+			
+			while(pixel_x< this.ncols && 
+				( pixel2refpos[pixel_x]==-1 || pixel2refpos[pixel_x]< samRecord.getAlignmentStart()))
+				{
+				//content+=">";
+				//console.log(""+pixel2refpos[pixel_x]+"/"+samRecord.getAlignmentStart());
+				pixel_x++;
+				}
+			
+			}
+		while(pixel_x < this.cols)
+			{
+			content+=" ";
+			pixel_x++;
+			}
+
+		for(var x=0;false &&x<100;++x)
 			{
 			var gpos=this.reference.pos+x;
 			
