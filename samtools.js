@@ -430,6 +430,11 @@ SamRecord.prototype.isReverseStrand=function()
 	return this.isFlagSet(0x10);
 	}
 
+SamRecord.prototype.getStrand = function() {
+if( this.isUnmapped()) return null;
+return( this.isReverseStrand() ? "-":"+" );
+}
+
 SamRecord.prototype.isMateReverseStrand=function()
 	{
 	return this.isFlagSet(0x20);
