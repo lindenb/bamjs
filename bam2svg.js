@@ -115,7 +115,7 @@ SVGBrowser.prototype.build = function(svgRoot,interval,reads)
 	    path.setAttribute("d",this.hershey.svgPath(
 			    base,
 			    this.mid_y()+fontSize/2.0,
-			    this.mid_y()+fontSize/2.0,
+			    this.mid_y()-fontSize/2.0,
 			    fontSize,
 			    fontSize
 			    ));
@@ -173,6 +173,7 @@ SVGBrowser.prototype.build = function(svgRoot,interval,reads)
 	var xyrecord = row[j];
 	var unclipped_start= xyrecord.record.getUnclippedStart();
 	var gread =  SVG.createGroup();
+	gread.setAttribute("title", xyrecord.record.getReadName());
 	gRow.appendChild(gread);
 	/* find position of arrow */
 	var arrow_cigar_index=-1;
