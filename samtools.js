@@ -74,7 +74,13 @@ CigarOperator.getByName=function(op)
 		default: throw ("Unrecognized CigarOperator: " + op);
         	}
     	}
+CigarOperator.prototype.isClip = function() {
+return this.letter == "H" || this.letter == "S" ;
+}
 
+CigarOperator.prototype.name = function() {
+return this.letter == "=" ?"EQ":this.letter ;
+}
 
 /****************************************************************************************************************************/
 /****************************************************************************************************************************/
@@ -91,13 +97,26 @@ CigarElement.prototype.size=function()
 	{
 	return this.length;
 	}
+/** alias of size */
+CigarElement.prototype.getLength=function()
+	{
+	return this.size();
+	}
 
+/** shotcuts to get the character of the operator */
+CigarElement.prototype.getOperator=function()
+	{
+	return this.op;
+	}	
+	
 /** shotcuts to get the character of the operator */
 CigarElement.prototype.letter=function()
 	{
 	return this.op.letter;
 	}
 
+	
+	
 CigarElement.prototype.toString=function()
 	{
 	return ""+this.size()+this.letter();
@@ -164,13 +183,7 @@ CigarElement.prototype.sameAs=function(other)
 /** A list of CigarElements, which describes how a read aligns with the reference. */
 function Cigar()
 	{
-	if( arguments.lenth == 1)
-	  {
-	  this.cigarElements = arguments[0];
-	  }
-	else {
-	  this.cigarElements = [];
-	  }
+	this.cigarElements = [];
 	}
 
 Cigar.prototype.size=function()
@@ -219,7 +232,7 @@ Cigar.prototype.toString=function()
 /** static function parsing a cigar from a string */
 Cigar.parse=function(cigarStr)
 	{
-	var elts = new Array();
+	var cigar =  new Cigar();
 	var i=0;
 	while(i< cigarStr.length)
 		{
@@ -231,9 +244,9 @@ Cigar.parse=function(cigarStr)
 			}
 		if(length==0) throw "length=0 in cigarString: \""+cigarStr+"\"";
 		var op=CigarOperator.getByName(cigarStr[i++]);
-		elts.push(new CigarElement(length,op));
+		cigar.cigarElements.push(new CigarElement(length,op));
 		}
-	return new Cigar(elts);
+	return cigar;
 	}
 /****************************************************************************************************************************/
 /****************************************************************************************************************************/
@@ -383,7 +396,7 @@ SamRecord.prototype.setFlag = function(flg) { this.flag = flg;}
 SamRecord.prototype.getFlag = function() { return this.flag;}
 
 
-SamRecord.prototype.setCigarString = function(cigar) { this.setCigar(Cigar.parse(cigar));}
+SamRecord.prototype.setCigarString = function(cigarstr) { this.setCigar(Cigar.parse(cigarstr));}
 SamRecord.prototype.getCigarString = function() { return this.getCigar().toString();}
 
 
@@ -489,7 +502,7 @@ SamRecord.prototype.getUnclippedStart = function() {
        var unClippedStart = this.getAlignmentStart();
         for(var i=0; i< this.cigar.size(); ++i) {
             var ce = this.cigar.get(i);
-	    var op = cig.getOperator();
+	    var op = ce.getOperator();
             if (op == CigarOperator.S || op == CigarOperator.H ) {
                 unClippedStart -= ce.getLength();
             } else {

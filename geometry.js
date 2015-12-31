@@ -95,3 +95,34 @@ Rectangle.prototype.scaled = function(ratio)
   var y=this.getY()+(this.getHeight()-h)/2.0;
   return new Rectangle(x,y,w,h);
   }
+
+  
+function Line() {
+  if(arguments.length == 4 ) {
+  this.x1=arguments[0];
+  this.y1=arguments[1];
+  this.x2=arguments[2];
+  this.y2=arguments[3];
+  } else if( arguments.length == 1) {
+  this.x1=arguments[0].x1;
+  this.y1=arguments[0].y1;
+  this.x2=arguments[0].x2;
+  this.y2=arguments[0].y2;
+  } else if( arguments.length == 2 && (arguments[0] instanceof Point) && (arguments[1] instanceof Point)) {
+  this.x1=arguments[0].getX();
+  this.y1=arguments[0].getY();
+  this.x2=arguments[1].getX();
+  this.y2=arguments[2].getY();
+  } else {
+  this.x1=0;
+  this.y1=0;
+  this.x2=0;
+  this.y2=0;
+  }
+}
+Line.prototype.getX1 = function() { return this.x1; }
+Line.prototype.getY1 = function() { return this.y1; }
+Line.prototype.getX2 = function() { return this.x2; }
+Line.prototype.getY2 = function() { return this.y2; }
+Line.prototype.getBegin = function() { return new Point(this.getX1(),this.getY1()); }
+Line.prototype.getEnd = function() { return new Point(this.getX2(),this.getY2()); }

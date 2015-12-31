@@ -51,5 +51,24 @@ createRect : function() {
   r.setAttribute("width",rect.getWidth());
   r.setAttribute("height",rect.getHeight());
   return r;
+},
+createLine : function() {
+  var r = this.createElement("line");
+  var rect;
+  if(arguments.length==1 && arguments[0] instanceof Line) {
+    rect = arguments[0];
+    }
+  else if( arguments.length == 4) 
+  {
+    rect = new Rectangle(arguments[0],arguments[1],arguments[2],arguments[3]);
+  }
+  else {
+      rect = new Rectangle();
+  }
+  r.setAttribute("x",rect.getX());
+  r.setAttribute("y",rect.getY());
+  r.setAttribute("width",rect.getWidth());
+  r.setAttribute("height",rect.getHeight());
+  return r;
 }
 };

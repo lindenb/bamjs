@@ -179,7 +179,7 @@ Hershey.prototype.paint=function(ctx,s,x,y,width,height)
 Hershey.prototype.svgPath = function(s,x,y,width,height)
 	{
 	if(s==null || s.length==0 || width==0 || height==0) return "";
-	
+	var d="";
 	var i,dx=width/s.length;
 	for(i=0;i < s.length;++i)
 		{
@@ -194,14 +194,14 @@ Hershey.prototype.svgPath = function(s,x,y,width,height)
 			
 			if(p2.operator == Hershey.LINETO)
 				{
-				//ctx.lineTo(x2,y2);
+				d+="L "+x2+" "+y2+" ";
 				}
 			else
 				{
-				//ctx.moveTo(x2,y2);
+				d+="M "+x2+" "+y2+" ";
 				}
 			}
 		
 		}
-	
+	return d;
 	};
