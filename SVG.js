@@ -32,6 +32,8 @@ createVGradient : function(gradId,styleTop,styleMid) {
   },
 createDefs : function() { return this.createElement("defs");},
 createPath : function() { return this.createElement("path");},
+createUse : function() { return this.createElement("use");},
+createStyle : function() { return this.createElement("style");},
 createGroup : function() { return this.createElement("g");},
 createRect : function() {
   var r = this.createElement("rect");

@@ -2,6 +2,7 @@ load("geometry.js");
 load("samtools.js");
 load("hershey.js");
 load("SVG.js");
+load("XLINK.js");
 load("dom.js");
 load("bam2svg.js");
 var samfile =

@@ -732,6 +732,6 @@ Interval.prototype.toString = function() {
 	}
 Interval.prototype.contains = function(pos)
 	{
-	return start<=pos && pos<=end;
+	return this.start<=pos && pos<=this.end;
 	}
 
