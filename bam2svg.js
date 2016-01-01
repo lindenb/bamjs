@@ -36,7 +36,7 @@ SVGBrowser.prototype.format = function(v)
     }
 SVGBrowser.prototype.trim = function( pos0)
     {
-    return Math.min(Math.max(pos0, this.interval.getStart()),this.interval.getEnd());
+    return Math.min(Math.max(pos0, this.interval.getStart()),this.interval.getEnd()+1);
     }
 SVGBrowser.prototype.baseToPixel = function(pos)
     {
@@ -103,7 +103,7 @@ SVGBrowser.prototype.build = function(svgRoot,interval,reads)
     var acidNucleics = ["a","A","t","T","g","G","c","C","n","N"];
     for(var i in acidNucleics)
 	    {
-	    var factor=0.8;
+	    var factor=0.7;
 	    var fontSize= this.y_h95()*factor;
 	    var base= acidNucleics[i];
 	    var path = SVG.createPath();
@@ -114,7 +114,7 @@ SVGBrowser.prototype.build = function(svgRoot,interval,reads)
 	    path.setAttribute("class","b"+base.toUpperCase());
 	    path.setAttribute("d",this.hershey.svgPath(
 			    base,
-			    this.mid_y()+fontSize/2.0,
+			    0,
 			    this.mid_y()-fontSize/2.0,
 			    fontSize,
 			    fontSize
@@ -160,6 +160,8 @@ SVGBrowser.prototype.build = function(svgRoot,interval,reads)
 	rows.push(row);
       }
       }
+    var gRuler = SVG.createGroup();
+    svgRoot.appendChild(gRuler);
     var gAllReads = SVG.createGroup();
     svgRoot.appendChild(gAllReads);
     for(var i in rows)
@@ -258,7 +260,7 @@ SVGBrowser.prototype.build = function(svgRoot,interval,reads)
 				      break;
 				      }
 			      in_clip=true;
-			      break;
+			      //NO break
 			      }
 			case 'M':
 			case 'X':
@@ -392,8 +394,34 @@ SVGBrowser.prototype.build = function(svgRoot,interval,reads)
 	  }
       
       }
-      
+    
     }
+    
+    /* ruler */
+    var prev_ruler_printed=-1;
+    for(var pos=this.interval.start; pos<=this.interval.end;++pos)
+	{
+	var x= this.baseToPixel(pos);
+	var L=SVG.createLine();
+        gRuler.appendChild(L);
+	L.setAttribute("class","rulerline");
+	L.setAttribute("title",this.format(pos));
+	L.setAttribute("x1",this.format(x));
+	L.setAttribute("x2",this.format(x));
+	L.setAttribute("y1",this.format(0));
+	L.setAttribute("y2",this.format(rows.length * this.featureHeight));
+	if(prev_ruler_printed==-1 ||  this.baseToPixel(prev_ruler_printed)+this.featureHeight < x )
+		{
+		x= (this.baseToPixel(pos)+this.baseToPixel(pos+1))/2.0;
+		var P=SVG.createPath();
+		gRuler.appendChild(P);
+		P.setAttribute("class","rulerlabel");
+		P.setAttribute("title",this.format(pos));
+		P.setAttribute("d",this.hershey.svgPath(this.format(pos),0,0,Math.min((""+pos).length*this.featureHeight,this.HEIGHT_RULER)-20,this.featureHeight));
+		P.setAttribute("transform","translate("+(x-this.featureHeight/2.0)+","+ (0+(this.HEIGHT_RULER-10)) +") rotate(-90) ");
+		prev_ruler_printed=pos;
+		}	
+	}
     
     svgRoot.setAttribute("height",(rows.length * this.featureHeight) );
     }
