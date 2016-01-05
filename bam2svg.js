@@ -28,6 +28,7 @@ function SVGBrowser()
 	this.interval = new Interval("",0,0),
 	this.featureHeight = 10.0;
 	this.featureWidth = 10.0;
+	this.reference = null;
 	}
 
 SVGBrowser.prototype.format = function(v)
@@ -85,7 +86,7 @@ SVGBrowser.prototype.y_h95 = function()
     }
     
     
-SVGBrowser.prototype.build = function(svgRoot,interval,reads)
+SVGBrowser.prototype.build = function(svgRoot,interval,reads,reference)
     {
     this.interval = interval;
     
@@ -160,8 +161,27 @@ SVGBrowser.prototype.build = function(svgRoot,interval,reads)
 	rows.push(row);
       }
       }
+
+    /** create title */
+    var gTitle = SVG.createGroup();
+    gTitle.setAttribute("title","Title");
+    svgRoot.appendChild(gTitle);
+  
+    /** create Ruler 'g' */
     var gRuler = SVG.createGroup();
     svgRoot.appendChild(gRuler);
+    
+    /** create Reference line */
+    var gReference = SVG.createGroup();
+    gReference.setAttribute("title","Reference");
+    svgRoot.appendChild(gReference);
+    
+    /** create Consensus line */
+    var gConsensus = SVG.createGroup();
+    gConsensus.setAttribute("title","Consensus");
+    svgRoot.appendChild(gConsensus);
+    
+    /** create 'g' for all reads */
     var gAllReads = SVG.createGroup();
     svgRoot.appendChild(gAllReads);
     for(var i in rows)
@@ -201,7 +221,7 @@ SVGBrowser.prototype.build = function(svgRoot,interval,reads)
 	/* loop over cigar string */
 	var refPos = unclipped_start;
 	var readPos = 0;
-	var pos2insertions={};
+	var insertions=[];
 	
 		
 	for(var cidx=0; cidx< xyrecord.record.getCigar().size(); cidx++ )
@@ -238,7 +258,17 @@ SVGBrowser.prototype.build = function(svgRoot,interval,reads)
 					{
 					sb += (xyrecord.record.charAt(readPos++));
 					}
-				pos2insertions.put(""+refPos, sb );
+				 if( refPos >= this.interval.start && refPos <= this.interval.end) {
+				    var L = SVG.createLine();
+				    var x= this.baseToPixel(refPos);
+				    L.setAttribute("title","Insertion "+insertion);
+				    L.setAttribute("class","insert");
+				    L.setAttribute("x1",this.format(x));
+				    L.setAttribute("x2",this.format(x));
+				    L.setAttribute("y1",this.format(this.y_top5()));
+				    L.setAttribute("y2",this.format(this.y_bot5()));
+				    insertions.push( L );
+				    }
 				break;
 				}
 			case 'H':
@@ -374,23 +404,11 @@ SVGBrowser.prototype.build = function(svgRoot,interval,reads)
 			default: throw "unknown operator "+ce+"/"+op.letter;
 			}
 		}
-      //print insertions
       
-      for(var posStr in pos2insertions)
+      // insertions
+      for(var i in insertions)
 	  {
-	  var pos = parseInt(posStr);
-	  if(pos < this.interval.start)  continue;
-	  if(pos > this.interval.end)  continue;
-	  var insertion = pos2insertions.get(pos);
-	  var L = SVG.createLine();
-	  var x= this.baseToPixel(pos);
-	  L.setAttribute("title","Insertion "+insertion);
-	  L.setAttribute("class","insert");
-	  L.setAttribute("x1",this.format(x));
-	  L.setAttribute("x2",this.format(x));
-	  L.setAttribute("y1",this.format(this.y_top5()));
-	  L.setAttribute("y2",this.format(this.y_bot5()));
-	  gread.appendChild(L);
+	  gread.appendChild( insertions[i] );
 	  }
       
       }
@@ -422,8 +440,39 @@ SVGBrowser.prototype.build = function(svgRoot,interval,reads)
 		prev_ruler_printed=pos;
 		}	
 	}
-    
+
+	
+     /** print Reference */
+    for(var pos=this.interval.start; pos<=this.interval.end;++pos)
+	{
+        var u = SVG.createUse();
+	gReference.appendChild(u);
+	u.setAttribute("x",this.format( this.baseToPixel(pos)));
+        u.setAttribute("title",this.format(pos));
+	
+	if( reference == null )
+	  {
+	  u.setAttributeNS(XLINK.NS,"xlink:href", "#bN");
+	  }
+	  else 
+	  {
+	  u.setAttributeNS(XLINK.NS,"xlink:href", "#b"+reference.charAt(pos));
+	  }
+	}
+
+    /** print Consensus */
+    for(var pos=this.interval.start; pos<=this.interval.end;++pos)
+	{
+        var u = SVG.createUse();
+	gConsensus.appendChild(u);
+	u.setAttribute("x",this.format( this.baseToPixel(pos)));
+        u.setAttribute("title",this.format(pos));
+	u.setAttributeNS(XLINK.NS,"xlink:href", "#bN");
+	}
+
+	
+	
     svgRoot.setAttribute("height",(rows.length * this.featureHeight) );
     }
     
-    
+

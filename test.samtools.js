@@ -378,6 +378,6 @@ for(i in lines) {
 var svgRoot= SVG.createElement("svg");
 document.appendChild(svgRoot);
 var viewer = new  SVGBrowser();
-viewer.build(svgRoot,new Interval("rotavirus",370,440),reads);
+viewer.build(svgRoot,new Interval("rotavirus",370,440),reads,null);
 
 Rhino.dumpXml(document);
