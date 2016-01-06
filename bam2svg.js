@@ -20,8 +20,8 @@ return this.context.showClipping ?
 function SVGBrowser()
 	{
 	this.HEIGHT_MAIN_TITLE=100;
-	this.HEIGHT_SAMPLE_NAME=50;
-	this.HEIGHT_RULER=200;
+	this.HEIGHT_RULER=50;
+	this.HEIGHT_COVERAGE=100;
 	this.drawinAreaWidth = 1000;
 	this.showClipping = true;
 	this.hershey = new Hershey(),
@@ -31,6 +31,21 @@ function SVGBrowser()
 	this.reference = null;
 	}
 
+/** format integer number , adding comma to thousand */
+SVGBrowser.prototype.niceNumber = function(v)
+    {
+    var o="";
+    var s=""+v;
+    var i;
+    for(i= s.length -1; i>=0; --i)
+    	{
+    	if(o.length %3 ==0 && o.length >0) o=","+o;
+    	o = s.charAt(i) + o;
+    	}
+    return o;
+    }
+
+/** TODO: remove too many number after comma */
 SVGBrowser.prototype.format = function(v)
     {
     return v;
@@ -76,9 +91,10 @@ SVGBrowser.prototype.y_h95 = function()
 	  ".homvar {stroke:blue;fill:blue;}\n"+
 	  ".het {stroke:blue;fill:blue;}\n"+
 	  "path.c {stroke:gray;}\n"+
+	  ".coverage {fill:blue;stroke:gray;stroke-width:3px;}\n"+
 	  "line.insert {stroke:red;stroke-width:4px;}\n"+
 	  "line.rulerline {stroke:lightgray;stroke-width:0.5px;}\n"+
-	  "line.rulerlabel {stroke:gray;stroke-width:2px;}\n"+
+	  "path.rulerlabel {stroke:gray;stroke-width:2px;fill:none;}\n"+
 	  "path.maintitle {stroke:blue;stroke-width:5px;}\n"+
 	  "path.samplename {stroke:black;stroke-width:3px;}\n"+
 	  "circle.mutation {stroke:red;fill:none;stroke-width:"+(this.featureWidth<5?0.5:3.0)+"px;}"
@@ -88,13 +104,28 @@ SVGBrowser.prototype.y_h95 = function()
     
 SVGBrowser.prototype.build = function(svgRoot,interval,reads,reference)
     {
-    this.interval = interval;
+    /* top Y coordinate to transform(0,topY) verticaly the 'g' elements and getting image height */
+    var topY = 0;
     
+    /* if reference sequence is null, create a mock one */
+    if( reference == null ) reference = new Reference( 
+    	 interval.getContig(),
+    	 interval.getStart(),
+    	 null
+    	 );
+    
+    this.interval = interval;
     this.featureWidth=  this.drawinAreaWidth/this.interval.distance(); 
     this.featureHeight= Math.min(Math.max(5.0,this.featureWidth),30); 
-    this.HEIGHT_RULER= (""+this.interval.end).length*this.featureHeight+5;
-			
+    this.HEIGHT_RULER= this.niceNumber(""+this.interval.end).length*this.featureHeight+5;
+	
+	/** initialize coverage */
     var coverage={};
+    for(var i= interval.getStart(); i<=interval.getEnd(); ++i)
+    	{
+    	coverage[i] = 0;
+    	}
+    
     var consensus={};
     var defsNode = SVG.createDefs();
     svgRoot.appendChild(defsNode);
@@ -154,36 +185,65 @@ SVGBrowser.prototype.build = function(svgRoot,interval,reads,reference)
         break;
 	}
       if( xyrecord != null )
-      {
-	var row=[];
-	xyrecord.y = rows.length;
-	row.push(xyrecord);
-	rows.push(row);
-      }
+      	{
+		var row=[];
+		xyrecord.y = rows.length;
+		row.push(xyrecord);
+		rows.push(row);
+      	}
       }
 
     /** create title */
+    svgRoot.appendChild(SVG.createTitle(interval.getContig()+":"+this.niceNumber(interval.getStart())+"-"+this.niceNumber(interval.getEnd())));
+    
     var gTitle = SVG.createGroup();
+    var titleHeight = 48;
     gTitle.setAttribute("title","Title");
     svgRoot.appendChild(gTitle);
+    var elt = SVG.createText(
+    	(this.drawinAreaWidth/2.0),
+    	(this.HEIGHT_MAIN_TITLE/2.0 + titleHeight/2.0),
+    	interval.getContig()+":"+this.niceNumber(interval.getStart())+"-"+this.niceNumber(interval.getEnd())
+    	);
+    elt.setAttribute("title",interval.toString());
+    elt.setAttribute("style","text-anchor:middle;font-size:"+titleHeight+"px;");
+    gTitle.appendChild(elt);
+    topY += (this.HEIGHT_MAIN_TITLE);
   
-    /** create Ruler 'g' */
+    /** create Ruler  */
     var gRuler = SVG.createGroup();
     svgRoot.appendChild(gRuler);
+    gRuler.setAttribute("transform","translate(0,"+topY+")");
+   	topY += (this.HEIGHT_RULER);
     
     /** create Reference line */
     var gReference = SVG.createGroup();
     gReference.setAttribute("title","Reference");
     svgRoot.appendChild(gReference);
+    gReference.setAttribute("transform","translate(0,"+topY+")");
+    topY += (this.featureHeight);
     
-    /** create Consensus line */
+     /** create Consensus line */
     var gConsensus = SVG.createGroup();
     gConsensus.setAttribute("title","Consensus");
     svgRoot.appendChild(gConsensus);
+    gConsensus.setAttribute("transform","translate(0,"+topY+")");
+    topY += (this.featureHeight);
+    
+    /** create Coverage line */
+    var gCoverage = SVG.createGroup();
+    gCoverage.setAttribute("title","Coverage");
+    svgRoot.appendChild(gCoverage);
+    gCoverage.setAttribute("transform","translate(0,"+topY+")");
+    topY += (this.HEIGHT_COVERAGE);
+    
     
     /** create 'g' for all reads */
     var gAllReads = SVG.createGroup();
+    gAllReads.setAttribute("transform","translate(0,"+topY+")");
     svgRoot.appendChild(gAllReads);
+    
+    /** loop over each row */
     for(var i in rows)
     {
       var row=rows[i];
@@ -196,6 +256,7 @@ SVGBrowser.prototype.build = function(svgRoot,interval,reads,reference)
 	var unclipped_start= xyrecord.record.getUnclippedStart();
 	var gread =  SVG.createGroup();
 	gread.setAttribute("title", xyrecord.record.getReadName());
+    
 	gRow.appendChild(gread);
 	/* find position of arrow */
 	var arrow_cigar_index=-1;
@@ -423,19 +484,25 @@ SVGBrowser.prototype.build = function(svgRoot,interval,reads,reference)
 	var L=SVG.createLine();
         gRuler.appendChild(L);
 	L.setAttribute("class","rulerline");
-	L.setAttribute("title",this.format(pos));
+	L.setAttribute("title",this.niceNumber(pos));
 	L.setAttribute("x1",this.format(x));
 	L.setAttribute("x2",this.format(x));
 	L.setAttribute("y1",this.format(0));
 	L.setAttribute("y2",this.format(rows.length * this.featureHeight));
-	if(prev_ruler_printed==-1 ||  this.baseToPixel(prev_ruler_printed)+this.featureHeight < x )
+	//if(prev_ruler_printed==-1 ||  this.baseToPixel(prev_ruler_printed)+this.featureHeight <= x )
 		{
 		x= (this.baseToPixel(pos)+this.baseToPixel(pos+1))/2.0;
 		var P=SVG.createPath();
 		gRuler.appendChild(P);
 		P.setAttribute("class","rulerlabel");
-		P.setAttribute("title",this.format(pos));
-		P.setAttribute("d",this.hershey.svgPath(this.format(pos),0,0,Math.min((""+pos).length*this.featureHeight,this.HEIGHT_RULER)-20,this.featureHeight));
+		if(pos%10==0) P.setAttribute("style","stroke-width:2;");
+		P.setAttribute("title",this.niceNumber(pos));
+		P.setAttribute("d",this.hershey.svgPath(
+				this.niceNumber(pos),
+				0,0,
+				Math.min( this.niceNumber(pos).length*this.featureHeight , this.HEIGHT_RULER ),
+				(this.featureHeight*0.5)
+				));
 		P.setAttribute("transform","translate("+(x-this.featureHeight/2.0)+","+ (0+(this.HEIGHT_RULER-10)) +") rotate(-90) ");
 		prev_ruler_printed=pos;
 		}	
@@ -444,35 +511,50 @@ SVGBrowser.prototype.build = function(svgRoot,interval,reads,reference)
 	
      /** print Reference */
     for(var pos=this.interval.start; pos<=this.interval.end;++pos)
-	{
-        var u = SVG.createUse();
-	gReference.appendChild(u);
-	u.setAttribute("x",this.format( this.baseToPixel(pos)));
-        u.setAttribute("title",this.format(pos));
-	
-	if( reference == null )
-	  {
-	  u.setAttributeNS(XLINK.NS,"xlink:href", "#bN");
-	  }
-	  else 
-	  {
-	  u.setAttributeNS(XLINK.NS,"xlink:href", "#b"+reference.charAt(pos));
-	  }
-	}
+		{
+		var u = SVG.createUse();
+		gReference.appendChild(u);
+		u.setAttribute("x",this.format( this.baseToPixel(pos)));
+		u.setAttribute("title",this.format(pos));
+		u.setAttributeNS(XLINK.NS,"xlink:href", "#b"+reference.charAt(pos));  
+		}
 
     /** print Consensus */
     for(var pos=this.interval.start; pos<=this.interval.end;++pos)
-	{
-        var u = SVG.createUse();
-	gConsensus.appendChild(u);
-	u.setAttribute("x",this.format( this.baseToPixel(pos)));
-        u.setAttribute("title",this.format(pos));
-	u.setAttributeNS(XLINK.NS,"xlink:href", "#bN");
-	}
+		{
+		var u = SVG.createUse();
+		gConsensus.appendChild(u);
+		u.setAttribute("x",this.format( this.baseToPixel(pos)));
+		u.setAttribute("title",this.format(pos));
+		u.setAttributeNS(XLINK.NS,"xlink:href", "#bN");
+		}
+
+	/** print Coverage */
+	var maxCoverage = 50.0;
+	for(var pos=this.interval.start; pos<=this.interval.end;++pos)
+		{
+		maxCoverage= Math.max(maxCoverage,coverage[pos]);
+		}
+	
+    for(var pos=this.interval.start; pos<=this.interval.end;++pos)
+		{
+		var cov = coverage[pos];
+		var h = (cov/maxCoverage) * this.HEIGHT_COVERAGE;
+		var u = SVG.createRect(
+			this.format( this.baseToPixel(pos)),
+			this.HEIGHT_COVERAGE - h,
+			this.featureWidth,
+			h
+			);
+		u.setAttribute("class","coverage");
+		u.setAttribute("title",this.niceNumber(cov));
+		gCoverage.appendChild(u);
+		}
 
 	
+	topY = ((rows.length + 1 ) * this.featureHeight);
 	
-    svgRoot.setAttribute("height",(rows.length * this.featureHeight) );
+    svgRoot.setAttribute("height",topY);
     }
     
 

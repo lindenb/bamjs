@@ -263,11 +263,23 @@ function Reference(name,pos,sequence)
 /** return the base from the genomic index */
 Reference.prototype.get=function(index)
 	{
-	return (this.sequence != undefined &&
+	return (this.sequence != null &&
 			index >=this.pos &&
 			index-this.pos < this.sequence.length
 		? this.sequence.substr(index-this.pos,1) : 'N'
 		);
+	}
+
+/**  alias for get */
+Reference.prototype.charAt=function(index)
+	{
+	return this.get(index);
+	}
+
+/**  get contig */
+Reference.prototype.getContig = function()
+	{
+	return this.name;
 	}
 /****************************************************************************************************************************/
 /****************************************************************************************************************************/
@@ -728,7 +740,7 @@ Interval.prototype.distance = function()
 	return 1+ this.getEnd()-this.getStart();
 	}
 Interval.prototype.toString = function() {
-	return chrom+":"+start+"-"+end;
+	return this.getContig()+":"+this.getStart()+"-"+this.getEnd();
 	}
 Interval.prototype.contains = function(pos)
 	{

@@ -72,5 +72,25 @@ createLine : function() {
   r.setAttribute("width",rect.getWidth());
   r.setAttribute("height",rect.getHeight());
   return r;
+},
+createText : function() {
+  var r = this.createElement("text");
+
+  if( arguments.length == 3) 
+  {
+  r.setAttribute("x",arguments[0]);
+  r.setAttribute("y",arguments[1]);
+  r.appendChild( SVG.dom().createTextNode( arguments[2] ) )
+  }
+  return r;
+},
+createTitle : function() {
+  var r = this.createElement("title");
+
+  if( arguments.length == 1) 
+  {
+  r.appendChild( SVG.dom().createTextNode( arguments[0] ) )
+  }
+  return r;
 }
 };
