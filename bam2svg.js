@@ -125,8 +125,15 @@ SVGBrowser.prototype.build = function(svgRoot,interval,reads,reference)
     	{
     	coverage[i] = 0;
     	}
-    
+    /** initialize consensus */
     var consensus={};
+    for(var i= interval.getStart(); i<=interval.getEnd(); ++i)
+    	{
+    	consensus[i] = ' ';
+    	}
+    
+    
+    
     var defsNode = SVG.createDefs();
     svgRoot.appendChild(defsNode);
     svgRoot.setAttribute("width",this.drawinAreaWidth);
@@ -412,31 +419,32 @@ SVGBrowser.prototype.build = function(svgRoot,interval,reads,reference)
 				      {
 				      for(var i=0;i< ce.getLength();++i)
 					      {
-					      if( this.interval.contains(refPos+i) && op.isConsumesReferenceBases() )
-						{
-						if( !( (refPos+i) in coverage) ) coverage[ refPos+i]=0;
-						coverage[ refPos+i]++;
-						}
-						
 					      var ca= xyrecord.record.charAt(readPos);
-					      if(!in_clip)
-						      {
-						      /*
-						      var count= consensus[""+refPos+i] ;
-						      if(count==null)
-							      {
-							      count=new Counter<>();
-							      consensus.put(refPos+i,count) ;
-							      }
-						      count.incr(ca);*/ //TODO
-						      }
-					      var cb='N';
-					      var genomicSequence=null;//TODO
-					      if(genomicSequence!=null)
-						      {
-						      cb= genomicSequence.charAt(refPos+i-1).toUpperCase();
-						      }
 					      
+					      if( !in_clip && this.interval.contains(refPos+i) && op.isConsumesReferenceBases() )
+								{
+								 /* handle coverage */
+								if( !( (refPos+i) in coverage) ) coverage[ refPos+i]=0;
+								coverage[ refPos+i]++;
+								
+								 /* handle consensus */
+								 if( consensus[refPos+i] == 'N')
+									{
+									//ignore
+									}
+								else if( consensus[refPos+i] == ' ')
+									{
+									consensus[refPos+i] = ca;
+									}
+								else if( consensus[refPos+i] != ca)
+									{
+									consensus[refPos+i] = 'N';
+									}
+								}
+						 
+
+					      var cb= reference.charAt(refPos+i-1).toUpperCase();
+					     
 					      if(cb!='N' && ca!='N' && cb!=ca && !in_clip)
 						      {
 						      var u = SVG.createUse();
@@ -522,11 +530,12 @@ SVGBrowser.prototype.build = function(svgRoot,interval,reads,reference)
     /** print Consensus */
     for(var pos=this.interval.start; pos<=this.interval.end;++pos)
 		{
+		if (consensus[pos]==' ') continue;
 		var u = SVG.createUse();
 		gConsensus.appendChild(u);
 		u.setAttribute("x",this.format( this.baseToPixel(pos)));
 		u.setAttribute("title",this.format(pos));
-		u.setAttributeNS(XLINK.NS,"xlink:href", "#bN");
+		u.setAttributeNS(XLINK.NS,"xlink:href", "#b" + consensus[pos]);
 		}
 
 	/** print Coverage */
