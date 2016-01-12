@@ -29,6 +29,7 @@ function SVGBrowser()
 	this.featureHeight = 10.0;
 	this.featureWidth = 10.0;
 	this.reference = null;
+	this.createReadGroupCallBack = null;
 	}
 
 /** format integer number , adding comma to thousand */
@@ -262,6 +263,8 @@ SVGBrowser.prototype.build = function(svgRoot,interval,reads,reference)
 	var xyrecord = row[j];
 	var unclipped_start= xyrecord.record.getUnclippedStart();
 	var gread =  SVG.createGroup();
+	
+	
 	gread.setAttribute("title", xyrecord.record.getReadName());
     
 	gRow.appendChild(gread);
@@ -480,6 +483,11 @@ SVGBrowser.prototype.build = function(svgRoot,interval,reads,reference)
 	  gread.appendChild( insertions[i] );
 	  }
       
+      //add callback if needed
+      if( this.createReadGroupCallBack != null )
+		{
+		this.createReadGroupCallBack(gread,xyrecord.record);
+		}
       }
     
     }
