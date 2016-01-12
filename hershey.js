@@ -113,7 +113,7 @@ Hershey.prototype.charToPathOp=function(letter)
 		if(s==null) return [];
 		
 		var num_vertices=0;
-		for( i=0;i< 3;++i)
+		for(var i=0;i< 3;++i)
 			{
 			var c=s.charAt(i);
 			if(c==' ' || c=='\n') continue;
@@ -122,7 +122,7 @@ Hershey.prototype.charToPathOp=function(letter)
 		num_vertices--;
 		i+=2;
 		var nop=0;
-		array=[];
+		var array=[];
 		while(nop<num_vertices)
 			{
 			var pathOp={operator:null,x:0,y:0};
