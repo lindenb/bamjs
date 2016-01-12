@@ -747,3 +747,33 @@ Interval.prototype.contains = function(pos)
 	return this.start<=pos && pos<=this.end;
 	}
 
+Interval.parse = function(s)
+	{
+	var colon=s.indexOf(':');
+	if(colon<1)
+		{
+		return null;
+		}
+	var chrom = s.substr(0,colon);
+	var start = 0;
+	var end = 0;
+	s = s.substr(colon+1);
+	var hyphen= s.indexOf('-');
+	if( hyphen == -1 )
+		{
+		start = parseInt(s.replace(/[,]/g, '') );
+		end = start;
+		}
+	else
+		{
+		start = parseInt( s.substr(0,hyphen).replace(/[,]/g, '') );
+		end = parseInt( s.substr(hyphen+1).replace(/[,]/g, '') );
+		}
+	
+	if(chrom.length==0 || isNaN(start) || start <0  || isNaN(end) || end < start)
+		{
+		return null;
+		}
+	return new Interval(chrom,start,end);
+	}
+
