@@ -80,15 +80,23 @@ SVGBrowser.prototype.y_h95 = function()
     return this.featureHeight/3.0;
     } 
  
+ 
+ SVGBrowser.prototype.setTitle = function(elt,title)
+    {
+    if(elt==null || title==null || title.length==0) return;
+    return elt.setAttribute("title",title);
+    } 
+ 
+ 
  SVGBrowser.prototype.getCss = function()
     {
     return "g.maing {stroke:black;stroke-width:0.5px;fill:none;}\n"+
 	  ".maintitle {stroke:blue;fill:none;}\n"+
-	  ".bA {stroke:green;}\n" + 
-	  ".bC {stroke:blue;}\n" +
-	  ".bG {stroke:black;}\n" +
-	  ".bT {stroke:red;}\n" +
-	  ".bN {stroke:gray;}\n" +
+	  ".bA {stroke:green;fill:none;}\n" + 
+	  ".bC {stroke:blue;fill:none;}\n" +
+	  ".bG {stroke:black;fill:none;}\n" +
+	  ".bT {stroke:red;fill:none;}\n" +
+	  ".bN {stroke:gray;fill:none;}\n" +
 	  ".homvar {stroke:blue;fill:blue;}\n"+
 	  ".het {stroke:blue;fill:blue;}\n"+
 	  "path.c {stroke:gray;}\n"+
@@ -150,7 +158,7 @@ SVGBrowser.prototype.build = function(svgRoot,interval,reads,reference)
 	    defsNode.appendChild(path);
 	
 	    path.setAttribute("id","b"+base);
-	    path.setAttribute("title",base);
+	    this.setTitle(path,base);
 	    path.setAttribute("class","b"+base.toUpperCase());
 	    path.setAttribute("d",this.hershey.svgPath(
 			    base,
@@ -206,14 +214,14 @@ SVGBrowser.prototype.build = function(svgRoot,interval,reads,reference)
     
     var gTitle = SVG.createGroup();
     var titleHeight = 48;
-    gTitle.setAttribute("title","Title");
+    this.setTitle(gTitle,"Title");
     svgRoot.appendChild(gTitle);
     var elt = SVG.createText(
     	(this.drawinAreaWidth/2.0),
     	(this.HEIGHT_MAIN_TITLE/2.0 + titleHeight/2.0),
     	interval.getContig()+":"+this.niceNumber(interval.getStart())+"-"+this.niceNumber(interval.getEnd())
     	);
-    elt.setAttribute("title",interval.toString());
+    this.setTitle(elt,interval.toString());
     elt.setAttribute("style","text-anchor:middle;font-size:"+titleHeight+"px;");
     gTitle.appendChild(elt);
     topY += (this.HEIGHT_MAIN_TITLE);
@@ -226,21 +234,21 @@ SVGBrowser.prototype.build = function(svgRoot,interval,reads,reference)
     
     /** create Reference line */
     var gReference = SVG.createGroup();
-    gReference.setAttribute("title","Reference");
+    this.setTitle(gReference,"Reference");
     svgRoot.appendChild(gReference);
     gReference.setAttribute("transform","translate(0,"+topY+")");
     topY += (this.featureHeight);
     
      /** create Consensus line */
     var gConsensus = SVG.createGroup();
-    gConsensus.setAttribute("title","Consensus");
+    this.setTitle(gConsensus,"Consensus");
     svgRoot.appendChild(gConsensus);
     gConsensus.setAttribute("transform","translate(0,"+topY+")");
     topY += (this.featureHeight);
     
     /** create Coverage line */
     var gCoverage = SVG.createGroup();
-    gCoverage.setAttribute("title","Coverage");
+    this.setTitle(gCoverage,"Coverage");
     svgRoot.appendChild(gCoverage);
     gCoverage.setAttribute("transform","translate(0,"+topY+")");
     topY += (this.HEIGHT_COVERAGE);
@@ -265,7 +273,7 @@ SVGBrowser.prototype.build = function(svgRoot,interval,reads,reference)
 	var gread =  SVG.createGroup();
 	
 	
-	gread.setAttribute("title", xyrecord.record.getReadName());
+	this.setTitle(gread, xyrecord.record.getReadName());
     
 	gRow.appendChild(gread);
 	/* find position of arrow */
@@ -312,7 +320,7 @@ SVGBrowser.prototype.build = function(svgRoot,interval,reads,reference)
 					{
 					var L= SVG.createLine();
 					L.setAttribute("class","indel");
-					L.setAttribute("title", op.name()+ce.getLength());
+					this.setTitle(L,op.name()+ce.getLength());
 					L.setAttribute("x1", this.format(this.baseToPixel(c_start)));
 					L.setAttribute("x2", this.format(this.baseToPixel(c_end)));
 					L.setAttribute("y1", this.format(this.mid_y()));
@@ -332,7 +340,7 @@ SVGBrowser.prototype.build = function(svgRoot,interval,reads,reference)
 				 if( refPos >= this.interval.start && refPos <= this.interval.end) {
 				    var L = SVG.createLine();
 				    var x= this.baseToPixel(refPos);
-				    L.setAttribute("title","Insertion "+insertion);
+				    this.setTitle(L,"Insertion "+sb);
 				    L.setAttribute("class","insert");
 				    L.setAttribute("x1",this.format(x));
 				    L.setAttribute("x2",this.format(x));
@@ -500,7 +508,7 @@ SVGBrowser.prototype.build = function(svgRoot,interval,reads,reference)
 	var L=SVG.createLine();
         gRuler.appendChild(L);
 	L.setAttribute("class","rulerline");
-	L.setAttribute("title",this.niceNumber(pos));
+	this.setTitle(L,this.niceNumber(pos));
 	L.setAttribute("x1",this.format(x));
 	L.setAttribute("x2",this.format(x));
 	L.setAttribute("y1",this.format(0));
@@ -512,7 +520,7 @@ SVGBrowser.prototype.build = function(svgRoot,interval,reads,reference)
 		gRuler.appendChild(P);
 		P.setAttribute("class","rulerlabel");
 		if(pos%10==0) P.setAttribute("style","stroke-width:2;");
-		P.setAttribute("title",this.niceNumber(pos));
+		this.setTitle(P,this.niceNumber(pos));
 		P.setAttribute("d",this.hershey.svgPath(
 				this.niceNumber(pos),
 				0,0,
@@ -531,7 +539,7 @@ SVGBrowser.prototype.build = function(svgRoot,interval,reads,reference)
 		var u = SVG.createUse();
 		gReference.appendChild(u);
 		u.setAttribute("x",this.format( this.baseToPixel(pos)));
-		u.setAttribute("title",this.format(pos));
+		this.setTitle(u,this.format(pos));
 		u.setAttributeNS(XLINK.NS,"xlink:href", "#b"+reference.charAt(pos));  
 		}
 
@@ -542,7 +550,7 @@ SVGBrowser.prototype.build = function(svgRoot,interval,reads,reference)
 		var u = SVG.createUse();
 		gConsensus.appendChild(u);
 		u.setAttribute("x",this.format( this.baseToPixel(pos)));
-		u.setAttribute("title",this.format(pos));
+		this.setTitle(u,this.format(pos));
 		u.setAttributeNS(XLINK.NS,"xlink:href", "#b" + consensus[pos]);
 		}
 
@@ -564,12 +572,12 @@ SVGBrowser.prototype.build = function(svgRoot,interval,reads,reference)
 			h
 			);
 		u.setAttribute("class","coverage");
-		u.setAttribute("title",this.niceNumber(cov));
+		this.setTitle(u,this.niceNumber(cov));
 		gCoverage.appendChild(u);
 		}
 
 	
-	topY = ((rows.length + 1 ) * this.featureHeight);
+	topY += ((rows.length + 1 ) * this.featureHeight);
 	
     svgRoot.setAttribute("height",topY);
     }
